@@ -36,25 +36,29 @@ def q1a_split_csv_with_train_and_test(filepath):
     designated = imported_data.loc[:, column_list]
     bin_transformed = pd.get_dummies(designated, drop_first=True)
 
-    # standardize except for the ID column
+    # standardize except for the ID and G3 columns
     ID_column = bin_transformed.ID
-    without_ID = bin_transformed.loc[:, bin_transformed.columns != "ID"]
+    G3_column = bin_transformed.G3
 
-    standardized = pd.DataFrame(scipy.stats.zscore(without_ID),
-                                index=without_ID.index,
-                                columns=without_ID.columns
-                                )
-    standardized_with_ID = pd.concat([ID_column, standardized], axis=1)
+    without_ID = bin_transformed.loc[:, bin_transformed.columns != "ID"]
+    without_ID_and_G3 = without_ID.loc[:, without_ID.columns != "G3"]
+
+    standardized_columns = pd.DataFrame(scipy.stats.zscore(without_ID_and_G3),
+                                        index=without_ID_and_G3.index,
+                                        columns=without_ID_and_G3.columns
+                                        )
+    standardized_with_ID_and_G3 = pd.concat(
+        [ID_column, standardized_columns, G3_column], axis=1)
 
     # generate train and test data
     # get 80% data as the training data from "train.csv" with sorted and purified
-    train_data = standardized_with_ID.sample(frac=0.8).sort_values(
+    train_data = standardized_with_ID_and_G3.sample(frac=0.8).sort_values(
         "ID").reset_index().drop("index", axis=1)
 
     # picking up test data from "train.csv" except for train data
     # get 20% data as the test data from "train.csv" with sorted and purified
     train_data_ID = list(train_data["ID"])
-    test_data = standardized_with_ID[~standardized_with_ID.ID.isin(
+    test_data = standardized_with_ID_and_G3[~standardized_with_ID_and_G3.ID.isin(
         train_data_ID)].sort_values("ID").reset_index().drop("index", axis=1)
 
     # create csv files
