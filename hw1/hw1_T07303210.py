@@ -95,7 +95,7 @@ def main():
     train_data_path = "./splitted_train_data.csv"
     test_data_path = "./splitted_test_data.csv"
 
-    if not os.path.exists(train_data_path) or os.path.exists(test_data_path):
+    if not os.path.exists(train_data_path) or not os.path.exists(test_data_path):
         q1a_split_csv_with_train_and_test(filepath)
 
 
