@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
+
 def q1a_split_csv_with_train_and_test(filepath):
 
     # split randomly and export csv for training and evaluating
@@ -20,25 +21,40 @@ def q1a_split_csv_with_train_and_test(filepath):
     train_data.to_csv("splitted_train_data.csv")
     test_data.to_csv("splitted_test_data.csv")
 
+
+def get_train_data():
+    return pd.read_csv("splitted_train_data.csv")
+
+
+def get_test_data():
+    return pd.read_csv("splitted_test_data.csv")
+
+
 def q1b_regression():
     pass
+
 
 def q1c_regression_with_regularization():
     pass
 
+
 def q1d_regression_with_bias():
     pass
+
 
 def q1e_bayesian_regression():
     pass
 
+
 def q1f_plot_and_compare():
     pass
+
 
 def main():
     filepath = "./train.csv"
 
     if not os.path.exists(filepath):
         q1a_split_csv_with_train_and_test(filepath)
+
 
 main()
