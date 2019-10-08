@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import pandas as pd
 import scipy.stats
@@ -38,27 +39,24 @@ def q1a_split_csv_with_train_and_test(filepath):
 
     # standardize except for the ID and G3 columns
     ID_column = bin_transformed.ID
-    G3_column = bin_transformed.G3
-
     without_ID = bin_transformed.loc[:, bin_transformed.columns != "ID"]
-    without_ID_and_G3 = without_ID.loc[:, without_ID.columns != "G3"]
 
-    standardized_columns = pd.DataFrame(scipy.stats.zscore(without_ID_and_G3),
-                                        index=without_ID_and_G3.index,
-                                        columns=without_ID_and_G3.columns
+    standardized_columns = pd.DataFrame(scipy.stats.zscore(without_ID),
+                                        index=without_ID.index,
+                                        columns=without_ID.columns
                                         )
-    standardized_with_ID_and_G3 = pd.concat(
-        [ID_column, standardized_columns, G3_column], axis=1)
+    standardized_with_ID = pd.concat(
+        [ID_column, standardized_columns], axis=1)
 
     # generate train and test data
     # get 80% data as the training data from "train.csv" with sorted and purified
-    train_data = standardized_with_ID_and_G3.sample(frac=0.8).sort_values(
+    train_data = standardized_with_ID.sample(frac=0.8).sort_values(
         "ID").reset_index().drop("index", axis=1)
 
     # picking up test data from "train.csv" except for train data
     # get 20% data as the test data from "train.csv" with sorted and purified
     train_data_ID = list(train_data["ID"])
-    test_data = standardized_with_ID_and_G3[~standardized_with_ID_and_G3.ID.isin(
+    test_data = standardized_with_ID[~standardized_with_ID.ID.isin(
         train_data_ID)].sort_values("ID").reset_index().drop("index", axis=1)
 
     # create csv files
@@ -67,15 +65,55 @@ def q1a_split_csv_with_train_and_test(filepath):
 
 
 def load_train_data():
-    return pd.read_csv("splitted_train_data.csv")
+    return pd.read_csv("splitted_train_data.csv", index_col=0)
 
 
 def load_test_data():
-    return pd.read_csv("splitted_test_data.csv")
+    return pd.read_csv("splitted_test_data.csv", index_col=0)
 
 
 def q1b_regression():
-    pass
+    train_data = load_train_data()
+    x_train, y_train = split_x_and_y(train_data)
+
+    # calc w
+    w_train = np.linalg.pinv(x_train.T.dot(
+        x_train)).dot(x_train.T).dot(y_train)
+
+    rmse = calc_rmse(y_train, w_train, x_train)
+    print(rmse)
+
+
+def split_x_and_y(data):
+    # split columns
+    # remove ID and G3 from dataframe
+    x_with_G3 = data.loc[:, data.columns != "ID"]
+
+    x = x_with_G3.loc[:, x_with_G3.columns != "G3"]
+    y = data.G3
+
+    return [x, y]
+
+
+def calc_rmse(y, w, x):
+    squared_error = 0.0
+
+    # sum up squared (observe - prediction)
+    for i in range(0, y.shape[0] - 1):
+        squared_error += (y.iloc[i] - w.dot(x.iloc[i]))**2
+
+    # Root mean squared error
+    return math.sqrt(squared_error/y.shape[0])
+
+
+def show_coefficients(w, x):
+
+    print("========coefficients=========")
+    x_list = list(x.columns)
+    w_list = list(w)
+
+    for i in range(0, len(x_list)-1):
+        print(x_list[i] + " : " + str(w_list[i]))
 
 
 def q1c_regression_with_regularization():
@@ -101,6 +139,8 @@ def main():
 
     if not os.path.exists(train_data_path) or not os.path.exists(test_data_path):
         q1a_split_csv_with_train_and_test(filepath)
+
+    q1b_regression()
 
 
 main()
