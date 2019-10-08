@@ -76,7 +76,7 @@ def q1b_regression():
     train_data = load_train_data()
     x_train, y_train = split_x_and_y(train_data)
 
-    # calc w
+    # calc w with pseudo-inverse
     w_train = np.linalg.pinv(x_train.T.dot(
         x_train)).dot(x_train.T).dot(y_train)
 
