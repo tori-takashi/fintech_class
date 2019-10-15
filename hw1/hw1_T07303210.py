@@ -6,7 +6,6 @@ import scipy.stats
 
 
 def q1a_split_csv_with_train_and_test(filepath):
-
     # split randomly and export csv for training and evaluating
     imported_data = pd.read_csv(filepath)
 
@@ -64,24 +63,70 @@ def q1a_split_csv_with_train_and_test(filepath):
     test_data.to_csv("splitted_test_data.csv")
 
 
+def q1b_regression():
+    print("~~~~~q1b~~~~~\n")
+    train_data = load_train_data()
+    test_data = load_test_data()
+    x_train, y_train = split_x_and_y(train_data)
+    x_test, y_test = split_x_and_y(test_data)
+
+    # calc w with pseudo-inverse
+    w_train = np.linalg.pinv(x_train.T.dot(
+        x_train)).dot(x_train.T).dot(y_train)
+
+    show_coefficients(w_train, x_train)
+    calc_rmse(w_train, x_test, y_test)
+
+
+def q1c_regression_with_regularization():
+    print("~~~~~q1c~~~~~\n")
+    train_data = load_train_data()
+    test_data = load_test_data()
+    x_train, y_train = split_x_and_y(train_data)
+    x_test, y_test = split_x_and_y(test_data)
+
+    lambda_value = 1.0
+    w_train = calc_w_train_with_ridge(x_train, y_train, lambda_value)
+
+    show_coefficients(w_train, x_train)
+    calc_rmse(w_train, x_test, y_test,
+              regularization="ridge", lambda_value=lambda_value)
+
+
+def q1d_regression_with_bias():
+    print("~~~~~q1d~~~~~\n")
+    train_data = load_train_data()
+    test_data = load_test_data()
+    x_train, y_train = split_x_and_y(train_data)
+    x_test, y_test = split_x_and_y(test_data)
+
+    bias_train = pd.DataFrame(data=[1]*x_train.shape[0], columns=["bias"])
+    x_train_with_bias = pd.concat([bias_train, x_train], axis=1)
+    bias_test = pd.DataFrame(data=[1]*x_test.shape[0], columns=["bias"])
+    x_test_with_bias = pd.concat([bias_test, x_test], axis=1)
+
+    lambda_value = 1.0
+    w_train = calc_w_train_with_ridge(x_train_with_bias, y_train, lambda_value)
+
+    show_coefficients(w_train, x_train_with_bias)
+    calc_rmse(w_train, x_test_with_bias, y_test,
+              regularization="ridge", lambda_value=lambda_value)
+
+
+def q1e_bayesian_regression():
+    pass
+
+
+def q1f_plot_and_compare():
+    pass
+
+
 def load_train_data():
     return pd.read_csv("splitted_train_data.csv", index_col=0)
 
 
 def load_test_data():
     return pd.read_csv("splitted_test_data.csv", index_col=0)
-
-
-def q1b_regression():
-    train_data = load_train_data()
-    x_train, y_train = split_x_and_y(train_data)
-
-    # calc w with pseudo-inverse
-    w_train = np.linalg.pinv(x_train.T.dot(
-        x_train)).dot(x_train.T).dot(y_train)
-
-    rmse = calc_rmse(y_train, w_train, x_train)
-    print(rmse)
 
 
 def split_x_and_y(data):
@@ -95,19 +140,7 @@ def split_x_and_y(data):
     return [x, y]
 
 
-def calc_rmse(y, w, x):
-    squared_error = 0.0
-
-    # sum up squared (observe - prediction)
-    for i in range(0, y.shape[0] - 1):
-        squared_error += (y.iloc[i] - w.dot(x.iloc[i]))**2
-
-    # Root mean squared error
-    return math.sqrt(squared_error/y.shape[0])
-
-
 def show_coefficients(w, x):
-
     print("========coefficients=========")
     x_list = list(x.columns)
     w_list = list(w)
@@ -116,20 +149,25 @@ def show_coefficients(w, x):
         print(x_list[i] + " : " + str(w_list[i]))
 
 
-def q1c_regression_with_regularization():
-    pass
+def calc_rmse(w_train, x_test, y_test, regularization="", lambda_value=1):
+    if regularization == "ridge":
+        y_test_predicted = x_test.dot(w_train)\
+            + (lambda_value / 2)*w_train.T.dot(w_train)
+    else:
+        y_test_predicted = x_test.dot(w_train)
+
+    se_matrix = (y_test - y_test_predicted)**2
+    rmse = math.sqrt((1/x_test.shape[0])*sum(se_matrix))
+    print("RMSE : " + str(rmse) + "\n")
+
+    return rmse
 
 
-def q1d_regression_with_bias():
-    pass
-
-
-def q1e_bayesian_regression():
-    pass
-
-
-def q1f_plot_and_compare():
-    pass
+def calc_w_train_with_ridge(x_train, y_train, lambda_value):
+    w_train = np.linalg.inv(x_train.T.dot(x_train)
+                            + lambda_value * np.identity(len(x_train.columns)))\
+        .dot(x_train.T).dot(y_train)
+    return w_train
 
 
 def main():
@@ -137,10 +175,12 @@ def main():
     train_data_path = "./splitted_train_data.csv"
     test_data_path = "./splitted_test_data.csv"
 
+    # solutions
     if not os.path.exists(train_data_path) or not os.path.exists(test_data_path):
         q1a_split_csv_with_train_and_test(filepath)
-
     q1b_regression()
+    q1c_regression_with_regularization()
+    q1d_regression_with_bias()
 
 
 main()
