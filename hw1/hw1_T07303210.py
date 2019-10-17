@@ -45,7 +45,11 @@ def q1a_split_csv_with_train_and_test(filepath):
                                         columns=without_ID.columns
                                         )
     standardized_with_ID = pd.concat(
+<<<<<<< HEAD
         [ID_column, standardized_columns], axis=1)
+=======
+        [discrete_df, standardized_columns], axis=1)
+>>>>>>> 84309e3... add readme, add splitted csv, fix q1a
 
     # generate train and test data
     # get 80% data as the training data from "train.csv" with sorted and purified
