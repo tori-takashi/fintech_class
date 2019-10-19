@@ -66,32 +66,27 @@ def q1a_split_csv_with_train_and_test(filepath):
 
 def q1b_regression():
     print("~~~~~q1b~~~~~\n")
-    train_data = load_train_data()
-    test_data = load_test_data()
-    x_train, y_train = split_x_and_y(train_data)
-    x_test, y_test = split_x_and_y(test_data)
+    data = initialize_data(bias=False)
 
     # calc w with pseudo-inverse
-    w_train = np.linalg.pinv(x_train.T.dot(
-        x_train)).dot(x_train.T).dot(y_train)
+    w_train = np.linalg.pinv(data["x_train"].T.dot(
+        data["x_train"])).dot(data["x_train"].T).dot(data["y_train"])
 
-    show_coefficients(w_train, x_train)
-    calc_rmse(w_train, x_test, y_test)
+    show_coefficients(w_train, data["x_train"])
+    calc_rmse(w_train, data["x_test"], ["y_test"])
     return w_train
 
 
 def q1c_regression_with_regularization():
     print("~~~~~q1c~~~~~\n")
-    train_data = load_train_data()
-    test_data = load_test_data()
-    x_train, y_train = split_x_and_y(train_data)
-    x_test, y_test = split_x_and_y(test_data)
+    data = initialize_data(bias=False)
 
     lambda_value = 0.5
-    w_train = calc_w_train_with_ridge(x_train, y_train, lambda_value)
+    w_train = calc_w_train_with_ridge(
+        data["x_train"], data["y_train"], lambda_value)
 
-    show_coefficients(w_train, x_train)
-    calc_rmse(w_train, x_test, y_test,
+    show_coefficients(w_train, data["x_train"])
+    calc_rmse(w_train, data["x_test"], data["y_test"],
               regularization="ridge", lambda_value=lambda_value)
 
     return w_train
@@ -99,21 +94,14 @@ def q1c_regression_with_regularization():
 
 def q1d_regression_with_bias():
     print("~~~~~q1d~~~~~\n")
-    train_data = load_train_data()
-    test_data = load_test_data()
-    x_train, y_train = split_x_and_y(train_data)
-    x_test, y_test = split_x_and_y(test_data)
-
-    bias_train = pd.DataFrame(data=[1]*x_train.shape[0], columns=["bias"])
-    x_train_with_bias = pd.concat([bias_train, x_train], axis=1)
-    bias_test = pd.DataFrame(data=[1]*x_test.shape[0], columns=["bias"])
-    x_test_with_bias = pd.concat([bias_test, x_test], axis=1)
+    data = initialize_data(bias=True)
 
     lambda_value = 0.5
-    w_train = calc_w_train_with_ridge(x_train_with_bias, y_train, lambda_value)
+    w_train = calc_w_train_with_ridge(
+        data["x_train"], data["y_train"], lambda_value)
 
-    show_coefficients(w_train, x_train_with_bias)
-    calc_rmse(w_train, x_test_with_bias, y_test,
+    show_coefficients(w_train, data["x_train"])
+    calc_rmse(w_train, data["x_test"], data["y_test"],
               regularization="ridge", lambda_value=lambda_value)
 
     return w_train
