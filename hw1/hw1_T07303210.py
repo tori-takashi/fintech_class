@@ -137,7 +137,7 @@ class Homework1:
         w_train = self.calc_w_train_with_ridge(
             data["x_train"], data["y_train"], lambda_value, bias=True)
 
-        self.show_coefficients(w_train, data["x_train"])
+        # self.show_coefficients(w_train, data["x_train"])
         self.calc_rmse(w_train, data["x_test"], data["y_test"])
 
         return w_train
@@ -177,11 +177,33 @@ class Homework1:
         y_predicted_q1d = x_test_with_bias.dot(w_trains["w_q1d"])
         y_predicted_q1e = x_test_with_bias.dot(w_trains["w_q1e"])
 
-        plt.plot(index, y_test)
-        plt.plot(index, y_predicted_q1b)
-        plt.plot(index, y_predicted_q1c)
-        plt.plot(index, y_predicted_q1d)
-        plt.plot(index, y_predicted_q1e)
+        rmse_q1b = self.calc_rmse(w_trains["w_q1b"], x_test, y_test)
+        rmse_q1c = self.calc_rmse(w_trains["w_q1c"], x_test, y_test)
+        rmse_q1d = self.calc_rmse(w_trains["w_q1d"], x_test_with_bias, y_test)
+        rmse_q1e = self.calc_rmse(w_trains["w_q1e"], x_test_with_bias, y_test)
+
+        plt.plot(index, y_test, label="Ground Truth")
+        plt.plot(index, y_predicted_q1b,
+                 label="({}) Linear Regression".format(round(rmse_q1b, 5)))
+        plt.plot(index, y_predicted_q1c,
+                 label="({})Linear Regression with Reg".format(round(rmse_q1c, 5)))
+        plt.plot(index, y_predicted_q1d,
+                 label="({}) Linear Regression with Reg and Bias".format(round(rmse_q1d, 5)))
+        plt.plot(index, y_predicted_q1e,
+                 label="({}) Bayesian Linear Regression".format(round(rmse_q1e, 5)))
+
+        plt.legend(loc='lower center',
+                   borderaxespad=0.,
+                   ncol=1,
+                   mode="expand",
+                   title="prediction type",
+                   prop={'size': 8})
+
+        plt.title("predicted values")
+        plt.xlabel("index")
+        plt.ylabel("values")
+
+        plt.savefig("t07303210_figure.png")
 
         plt.show()
 
