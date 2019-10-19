@@ -53,10 +53,13 @@ class Homework1:
             bin_transformed = pd.get_dummies(designated, drop_first=True)
 
             # divide train and test data
-            train_data = bin_transformed.sample(frac=0.8).sort_values(
+            train_data_with_ID = bin_transformed.sample(frac=0.8).sort_values(
                 "ID").reset_index().drop("index", axis=1)
-            test_data = bin_transformed.merge(train_data, indicator=True, how='outer').query(
+            test_data_with_ID = bin_transformed.merge(train_data_with_ID, indicator=True, how='outer').query(
                 '_merge=="left_only"').drop('_merge', 1).reset_index().drop("index", axis=1)
+
+            train_data = train_data_with_ID[train_data_with_ID.columns[train_data_with_ID.columns != "ID"]]
+            test_data = test_data_with_ID[test_data_with_ID.columns[test_data_with_ID.columns != "ID"]]
 
             standardized_train_data = self.standardize_dataframe(train_data)
             standardized_test_data = self.standardize_dataframe(test_data)
@@ -80,16 +83,16 @@ class Homework1:
             self.y_test_standard_deviation = np.std(test_data["G3"])
 
     def standardize_dataframe(self, df):
-        ID_column = df.ID
-        without_ID = df.loc[:, df.columns != "ID"]
-        standardized_columns = pd.DataFrame(scipy.stats.zscore(without_ID),
-                                            index=without_ID.index,
-                                            columns=without_ID.columns
+        G3_column = df.G3
+        without_G3 = df.loc[:, df.columns != "G3"]
+        standardized_columns = pd.DataFrame(scipy.stats.zscore(without_G3),
+                                            index=without_G3.index,
+                                            columns=without_G3.columns
                                             )
+        standardized_with_G3 = pd.concat(
+            [G3_column, standardized_columns], axis=1)
 
-        standardized_with_ID = pd.concat(
-            [ID_column, standardized_columns], axis=1)
-        return standardized_with_ID
+        return standardized_with_G3
 
     def q1b_regression(self):
         print("~~~~~q1b~~~~~\n")
@@ -99,7 +102,7 @@ class Homework1:
         w_train = np.linalg.pinv(data["x_train"].T.dot(
             data["x_train"])).dot(data["x_train"].T).dot(data["y_train"])
 
-        self.show_coefficients(w_train, data["x_train"])
+        # self.show_coefficients(w_train, data["x_train"])
         self.calc_rmse(w_train, data["x_test"], data["y_test"])
         return w_train
 
@@ -111,9 +114,8 @@ class Homework1:
         w_train = self.calc_w_train_with_ridge(
             data["x_train"], data["y_train"], lambda_value)
 
-        self.show_coefficients(w_train, data["x_train"])
-        self.calc_rmse(w_train, data["x_test"], data["y_test"],
-                       regularization="ridge", lambda_value=lambda_value)
+        # self.show_coefficients(w_train, data["x_train"])
+        self.calc_rmse(w_train, data["x_test"], data["y_test"])
 
         return w_train
 
@@ -123,11 +125,10 @@ class Homework1:
 
         lambda_value = 0.5
         w_train = self.calc_w_train_with_ridge(
-            data["x_train"], data["y_train"], lambda_value)
+            data["x_train"], data["y_train"], lambda_value, bias=True)
 
         self.show_coefficients(w_train, data["x_train"])
-        self.calc_rmse(w_train, data["x_test"], data["y_test"],
-                       regularization="ridge", lambda_value=lambda_value)
+        self.calc_rmse(w_train, data["x_test"], data["y_test"])
 
         return w_train
 
@@ -137,11 +138,10 @@ class Homework1:
 
         lambda_value = 1.0
         w_train = self.calc_w_train_with_ridge(
-            data["x_train"], data["y_train"], lambda_value)
+            data["x_train"], data["y_train"], lambda_value, bias=True)
 
-        self.show_coefficients(w_train, data["x_train"])
-        self.calc_rmse(w_train, data["x_test"], data["y_test"],
-                       regularization="ridge", lambda_value=lambda_value)
+        # self.show_coefficients(w_train, data["x_train"])
+        self.calc_rmse(w_train, data["x_test"], data["y_test"])
 
         return w_train
 
@@ -191,9 +191,11 @@ class Homework1:
             bias_train = pd.DataFrame(
                 data=[1]*x_train.shape[0], columns=["bias"])
             x_train_with_bias = pd.concat([bias_train, x_train], axis=1)
+
             bias_test = pd.DataFrame(
                 data=[1]*x_test.shape[0], columns=["bias"])
             x_test_with_bias = pd.concat([bias_test, x_test], axis=1)
+
             data = {"x_train":  x_train_with_bias, "y_train": y_train,
                     "x_test": x_test_with_bias, "y_test": y_test}
         else:
@@ -212,10 +214,6 @@ class Homework1:
 
         return [x, y]
 
-    def convert_to_original_g3(self, z, y_mean, y_standard_deviation):
-        g3 = y_standard_deviation*z + y_mean
-        return g3
-
     def show_coefficients(self, w, x):
         print("========coefficients=========")
         x_list = list(x.columns)
@@ -224,29 +222,26 @@ class Homework1:
         for i in range(0, len(x_list)-1):
             print(x_list[i] + " : " + str(w_list[i]))
 
-    def calc_rmse(self, w_train, x_test, y_test, regularization="", lambda_value=1):
-        if regularization == "ridge":
-            z_test_predicted = x_test.dot(w_train)\
-                + (lambda_value / 2)*w_train.T.dot(w_train)
-        else:
-            z_test_predicted = x_test.dot(w_train)
+    def calc_rmse(self, w_train, x_test, y_test):
+        y_test_predicted = x_test.dot(w_train)
 
-        y_test_predicted = self.convert_to_original_g3(
-            z_test_predicted, self.y_test_mean, self.y_test_standard_deviation)
-
-        actual_y_test = self.convert_to_original_g3(
-            y_test, self.y_test_mean, self.y_test_standard_deviation)
-
-        se_matrix = (actual_y_test - y_test_predicted)**2
+        se_matrix = (y_test - y_test_predicted)**2
         rmse = math.sqrt((1/x_test.shape[0])*sum(se_matrix))
         print("RMSE : " + str(rmse) + "\n")
 
         return rmse
 
-    def calc_w_train_with_ridge(self, x_train, y_train, lambda_value):
+    def calc_w_train_with_ridge(self, x_train, y_train, lambda_value, bias=False):
+        if bias == True:
+            identity = np.identity(len(x_train.columns))
+            identity[0][0] = 0.0
+            identity_for_ridge = identity
+        else:
+            identity_for_ridge = np.identity(len(x_train.columns))
+
         w_train = np.linalg.inv(x_train.T.dot(x_train)
-                                + lambda_value * np.identity(len(x_train.columns)))\
-            .dot(x_train.T).dot(y_train)
+                                + lambda_value * identity_for_ridge
+                                ).dot(x_train.T).dot(y_train)
         return w_train
 
     def main(self):
