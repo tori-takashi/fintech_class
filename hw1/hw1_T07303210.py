@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 
 
 class Homework1:
-    filepath = "./train.csv"
-    train_data_path = "./train_data.csv"
-    test_data_path = "./test_data.csv"
-    standardized_train_path = "./standardized_train_data.csv"
-    standardized_test_path = "./standardized_test_data.csv"
+    filepath = "train.csv"
+    train_data_path = "train_data.csv"
+    test_data_path = "test_data.csv"
+    standardized_train_path = "standardized_train_data.csv"
+    standardized_test_path = "standardized_test_data.csv"
 
     y_train_mean = 0.0
     y_train_standard_deviation = 0.0
@@ -61,12 +61,23 @@ class Homework1:
             standardized_train_data = self.standardize_dataframe(train_data)
             standardized_test_data = self.standardize_dataframe(test_data)
 
-            train_data.to_csv("train_data.csv")
-            test_data.to_csv("test_data.csv")
-            standardized_train_data.to_csv("standardized_train_data.csv")
-            standardized_test_data.to_csv("standardized_test_data.csv")
+            train_data.to_csv(self.train_data_path)
+            test_data.to_csv(self.test_data_path)
+            standardized_train_data.to_csv(self.standardized_train_path)
+            standardized_test_data.to_csv(self.standardized_test_path)
+
+            self.y_train_mean = np.mean(train_data["G3"])
+            self.y_test_mean = np.mean(test_data["G3"])
+            self.y_train_standard_deviation = np.std(train_data["G3"])
+            self.y_test_standard_deviation = np.std(test_data["G3"])
         else:
-            pass
+            train_data = pd.read_csv(self.train_data_path)
+            test_data = pd.read_csv(self.test_data_path)
+
+            self.y_train_mean = np.mean(train_data["G3"])
+            self.y_test_mean = np.mean(test_data["G3"])
+            self.y_train_standard_deviation = np.std(train_data["G3"])
+            self.y_test_standard_deviation = np.std(test_data["G3"])
 
     def standardize_dataframe(self, df):
         ID_column = df.ID
@@ -89,7 +100,7 @@ class Homework1:
             data["x_train"])).dot(data["x_train"].T).dot(data["y_train"])
 
         self.show_coefficients(w_train, data["x_train"])
-        self.calc_rmse(w_train, data["x_test"], ["y_test"])
+        self.calc_rmse(w_train, data["x_test"], data["y_test"])
         return w_train
 
     def q1c_regression_with_regularization(self):
@@ -165,10 +176,10 @@ class Homework1:
         plt.show()
 
     def load_train_data(self):
-        return pd.read_csv("splitted_train_data.csv", index_col=0)
+        return pd.read_csv(self.standardized_train_path, index_col=0)
 
     def load_test_data(self):
-        return pd.read_csv("splitted_test_data.csv", index_col=0)
+        return pd.read_csv(self.standardized_test_path, index_col=0)
 
     def initialize_data(self, bias=False):
         train_data = self.load_train_data()
@@ -201,6 +212,10 @@ class Homework1:
 
         return [x, y]
 
+    def convert_to_original_g3(self, z, y_mean, y_standard_deviation):
+        g3 = y_standard_deviation*z + y_mean
+        return g3
+
     def show_coefficients(self, w, x):
         print("========coefficients=========")
         x_list = list(x.columns)
@@ -211,12 +226,18 @@ class Homework1:
 
     def calc_rmse(self, w_train, x_test, y_test, regularization="", lambda_value=1):
         if regularization == "ridge":
-            y_test_predicted = x_test.dot(w_train)\
+            z_test_predicted = x_test.dot(w_train)\
                 + (lambda_value / 2)*w_train.T.dot(w_train)
         else:
-            y_test_predicted = x_test.dot(w_train)
+            z_test_predicted = x_test.dot(w_train)
 
-        se_matrix = (y_test - y_test_predicted)**2
+        y_test_predicted = self.convert_to_original_g3(
+            z_test_predicted, self.y_test_mean, self.y_test_standard_deviation)
+
+        actual_y_test = self.convert_to_original_g3(
+            y_test, self.y_test_mean, self.y_test_standard_deviation)
+
+        se_matrix = (actual_y_test - y_test_predicted)**2
         rmse = math.sqrt((1/x_test.shape[0])*sum(se_matrix))
         print("RMSE : " + str(rmse) + "\n")
 
