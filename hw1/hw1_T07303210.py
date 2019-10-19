@@ -45,11 +45,7 @@ def q1a_split_csv_with_train_and_test(filepath):
                                         columns=without_ID.columns
                                         )
     standardized_with_ID = pd.concat(
-<<<<<<< HEAD
         [ID_column, standardized_columns], axis=1)
-=======
-        [discrete_df, standardized_columns], axis=1)
->>>>>>> 84309e3... add readme, add splitted csv, fix q1a
 
     # generate train and test data
     # get 80% data as the training data from "train.csv" with sorted and purified
@@ -80,6 +76,7 @@ def q1b_regression():
 
     show_coefficients(w_train, x_train)
     calc_rmse(w_train, x_test, y_test)
+    return w_train
 
 
 def q1c_regression_with_regularization():
@@ -89,12 +86,14 @@ def q1c_regression_with_regularization():
     x_train, y_train = split_x_and_y(train_data)
     x_test, y_test = split_x_and_y(test_data)
 
-    lambda_value = 1.0
+    lambda_value = 0.5
     w_train = calc_w_train_with_ridge(x_train, y_train, lambda_value)
 
     show_coefficients(w_train, x_train)
     calc_rmse(w_train, x_test, y_test,
               regularization="ridge", lambda_value=lambda_value)
+
+    return w_train
 
 
 def q1d_regression_with_bias():
@@ -109,16 +108,29 @@ def q1d_regression_with_bias():
     bias_test = pd.DataFrame(data=[1]*x_test.shape[0], columns=["bias"])
     x_test_with_bias = pd.concat([bias_test, x_test], axis=1)
 
-    lambda_value = 1.0
+    lambda_value = 0.5
     w_train = calc_w_train_with_ridge(x_train_with_bias, y_train, lambda_value)
 
     show_coefficients(w_train, x_train_with_bias)
     calc_rmse(w_train, x_test_with_bias, y_test,
               regularization="ridge", lambda_value=lambda_value)
 
+    return w_train
+
 
 def q1e_bayesian_regression():
-    pass
+    print("~~~~~q1e~~~~~\n")
+    data = initialize_data(bias=True)
+
+    lambda_value = 1.0
+    w_train = calc_w_train_with_ridge(
+        data["x_train"], data["y_train"], lambda_value)
+
+    show_coefficients(w_train, data["x_train"])
+    calc_rmse(w_train, data["x_test"], data["y_test"],
+              regularization="ridge", lambda_value=lambda_value)
+
+    return w_train
 
 
 def q1f_plot_and_compare():
@@ -131,6 +143,26 @@ def load_train_data():
 
 def load_test_data():
     return pd.read_csv("splitted_test_data.csv", index_col=0)
+
+
+def initialize_data(bias=False):
+    train_data = load_train_data()
+    test_data = load_test_data()
+    x_train, y_train = split_x_and_y(train_data)
+    x_test, y_test = split_x_and_y(test_data)
+
+    if bias == True:
+        bias_train = pd.DataFrame(data=[1]*x_train.shape[0], columns=["bias"])
+        x_train_with_bias = pd.concat([bias_train, x_train], axis=1)
+        bias_test = pd.DataFrame(data=[1]*x_test.shape[0], columns=["bias"])
+        x_test_with_bias = pd.concat([bias_test, x_test], axis=1)
+        data = {"x_train":  x_train_with_bias, "y_train": y_train,
+                "x_test": x_test_with_bias, "y_test": y_test}
+    else:
+        data = {"x_train":  x_train, "y_train": y_train,
+                "x_test": x_test, "y_test": y_test}
+
+    return data
 
 
 def split_x_and_y(data):
@@ -185,6 +217,7 @@ def main():
     q1b_regression()
     q1c_regression_with_regularization()
     q1d_regression_with_bias()
+    q1e_bayesian_regression()
 
 
 main()
