@@ -3,6 +3,7 @@ import math
 import numpy as np
 import pandas as pd
 import scipy.stats
+import matplotlib.pyplot as plt
 
 
 def q1a_split_csv_with_train_and_test(filepath):
@@ -133,8 +134,35 @@ def q1e_bayesian_regression():
     return w_train
 
 
-def q1f_plot_and_compare():
-    pass
+def q1f_plot_and_compare(w_trains):
+    data_no_bias = initialize_data(bias=False)
+    data_with_bias = initialize_data(bias=True)
+
+    # q1b => no bias
+    # q1c => with bias
+    # q1d => with bias
+    # q1e => with bias
+
+    x_test = data_no_bias["x_test"]
+    x_test_with_bias = data_with_bias["x_test"]
+
+    # y doesn't depend on the bias term
+    y_test = data_no_bias["y_test"]
+
+    index = np.arange(0, x_test.shape[0], 1)
+
+    y_predicted_q1b = x_test.dot(w_trains["w_q1b"])
+    y_predicted_q1c = x_test.dot(w_trains["w_q1c"])
+    y_predicted_q1d = x_test_with_bias.dot(w_trains["w_q1d"])
+    y_predicted_q1e = x_test_with_bias.dot(w_trains["w_q1e"])
+
+    plt.plot(index, y_test)
+    plt.plot(index, y_predicted_q1b)
+    plt.plot(index, y_predicted_q1c)
+    plt.plot(index, y_predicted_q1d)
+    plt.plot(index, y_predicted_q1e)
+
+    plt.show()
 
 
 def load_train_data():
@@ -214,10 +242,12 @@ def main():
     # solutions
     if not os.path.exists(train_data_path) or not os.path.exists(test_data_path):
         q1a_split_csv_with_train_and_test(filepath)
-    q1b_regression()
-    q1c_regression_with_regularization()
-    q1d_regression_with_bias()
-    q1e_bayesian_regression()
+    w_q1b = q1b_regression()
+    w_q1c = q1c_regression_with_regularization()
+    w_q1d = q1d_regression_with_bias()
+    w_q1e = q1e_bayesian_regression()
+    w_trains = {"w_q1b": w_q1b, "w_q1c": w_q1c, "w_q1d": w_q1d, "w_q1e": w_q1e}
+    q1f_plot_and_compare(w_trains)
 
 
 main()
