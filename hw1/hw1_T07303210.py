@@ -12,11 +12,15 @@ class Homework1:
     test_data_path = "test_data.csv"
     standardized_train_path = "standardized_train_data.csv"
     standardized_test_path = "standardized_test_data.csv"
+    test_no_G3_path = "test_no_G3.csv"
 
     y_train_mean = 0.0
     y_train_standard_deviation = 0.0
     y_test_mean = 0.0
     y_test_standard_deviation = 0.0
+
+    y_test_no_G3_mean = 0.0
+    y_test_no_G3_standard_deviation = 0.0
 
     def q1a_split_csv_with_train_and_test(self):
         # split randomly and export csv for training and evaluating
@@ -53,6 +57,7 @@ class Homework1:
             bin_transformed = pd.get_dummies(designated, drop_first=True)
 
             # divide train and test data
+
             train_data_with_ID = bin_transformed.sample(frac=0.8).sort_values(
                 "ID").reset_index().drop("index", axis=1)
             test_data_with_ID = bin_transformed.merge(train_data_with_ID, indicator=True, how='outer').query(
@@ -82,17 +87,22 @@ class Homework1:
             self.y_train_standard_deviation = np.std(train_data["G3"])
             self.y_test_standard_deviation = np.std(test_data["G3"])
 
-    def standardize_dataframe(self, df):
-        G3_column = df.G3
-        without_G3 = df.loc[:, df.columns != "G3"]
+    def standardize_dataframe(self, df, test_mode=False):
+        if test_mode == False:
+            G3_column = df.G3
+            without_G3 = df.loc[:, df.columns != "G3"]
+        else:
+            without_G3 = df
         standardized_columns = pd.DataFrame(scipy.stats.zscore(without_G3),
                                             index=without_G3.index,
                                             columns=without_G3.columns
                                             )
-        standardized_with_G3 = pd.concat(
-            [G3_column, standardized_columns], axis=1)
-
-        return standardized_with_G3
+        if test_mode == False:
+            standardized_with_G3 = pd.concat(
+                [G3_column, standardized_columns], axis=1)
+            return standardized_with_G3
+        else:
+            return standardized_columns
 
     def q1b_regression(self):
         print("~~~~~q1b~~~~~\n")
@@ -175,6 +185,46 @@ class Homework1:
 
         plt.show()
 
+    def q2a_test_no_g3(self, w_q1d):
+        print("~~~~~q2a~~~~~\n")
+        test_no_g3 = pd.read_csv(self.test_no_G3_path)
+        column_list = [
+            "ID",           #
+            "school",       # (bin) MS=1  GP=0 => school_MP
+            "sex",          # (bin) M=1   F=0  => sex_M
+            "age",          #
+            "famsize",      # (bin) LE3=1 ME=0 => famsize_LE3
+            "studytime",    #
+            "failures",     #
+            "activities",   # (bin) yes=1 no=0 => activities_yes
+            "higher",       # (bin) yes=1 no=0 => higher_yes
+            "internet",     # (bin) yes=1 no=0 => internet_yes
+            "romantic",     # (bin) yes=1 no=0 => romantic_yes
+            "famrel",       #
+            "freetime",     #
+            "goout",        #
+            "Dalc",         #
+            "Walc",         #
+            "health",       #
+            "absences"      #
+            #"G3"            #
+        ]
+
+        designated = test_no_g3.loc[:, column_list]
+        bin_transformed = pd.get_dummies(designated, drop_first=True)
+
+        target_data = bin_transformed[bin_transformed.columns[bin_transformed.columns != "ID"]]
+        bias = pd.DataFrame(
+            data=[1]*target_data.shape[0], columns=["bias"])
+
+        standardized_target_data = self.standardize_dataframe(
+            target_data, test_mode=True)
+        standardized_target_data_with_bias = pd.concat(
+            [bias, standardized_target_data], axis=1)
+
+        predicted_data = standardized_target_data_with_bias.dot(w_q1d)
+        predicted_data.to_csv("T07303210_1.txt")
+
     def load_train_data(self):
         return pd.read_csv(self.standardized_train_path, index_col=0)
 
@@ -256,6 +306,8 @@ class Homework1:
         w_trains = {"w_q1b": w_q1b, "w_q1c": w_q1c,
                     "w_q1d": w_q1d, "w_q1e": w_q1e}
         self.q1f_plot_and_compare(w_trains)
+
+        self.q2a_test_no_g3(w_q1d)
 
 
 homework1 = Homework1()
