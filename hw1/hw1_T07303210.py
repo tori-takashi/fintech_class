@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import scipy.stats
 
 
@@ -45,11 +46,7 @@ def q1a_split_csv_with_train_and_test(filepath):
                                         columns=without_ID.columns
                                         )
     standardized_with_ID = pd.concat(
-<<<<<<< HEAD
         [ID_column, standardized_columns], axis=1)
-=======
-        [discrete_df, standardized_columns], axis=1)
->>>>>>> 84309e3... add readme, add splitted csv, fix q1a
 
     # generate train and test data
     # get 80% data as the training data from "train.csv" with sorted and purified
@@ -153,25 +150,38 @@ def show_coefficients(w, x):
         print(x_list[i] + " : " + str(w_list[i]))
 
 
-def calc_rmse(w_train, x_test, y_test, regularization="", lambda_value=1):
+def calc_rmse(w, x, y, regularization="", lambda_value=1):
     if regularization == "ridge":
-        y_test_predicted = x_test.dot(w_train)\
-            + (lambda_value / 2)*w_train.T.dot(w_train)
+        y_predicted = x.dot(w) + (lambda_value / 2)*w.T.dot(w)
     else:
-        y_test_predicted = x_test.dot(w_train)
+        y_predicted = x.dot(w)
 
-    se_matrix = (y_test - y_test_predicted)**2
-    rmse = math.sqrt((1/x_test.shape[0])*sum(se_matrix))
+    se_matrix = (y - y_predicted)**2
+    rmse = math.sqrt((1/x.shape[0])*sum(se_matrix))
     print("RMSE : " + str(rmse) + "\n")
 
     return rmse
 
 
 def calc_w_train_with_ridge(x_train, y_train, lambda_value):
-    w_train = np.linalg.inv(x_train.T.dot(x_train)
-                            + lambda_value * np.identity(len(x_train.columns)))\
-        .dot(x_train.T).dot(y_train)
+    # using gradient descent
+    # w_train = np.linalg.inv(x_train.T.dot(x_train)
+    #                        + lambda_value * np.identity(len(x_train.columns)))\
+    #    .dot(x_train.T).dot(y_train)
+    calculation_time = 100
+    step_u = 0.001
+
+    w_train = np.ones(x_train.shape[1])
+    for i in range(1, calculation_time):
+        y = ridge_regression(w_train, x_train, lambda_value)
+        rmse = calc_rmse(w_train, x_train, y_train,
+                         regularization="ridge", lambda_value=1)
+
     return w_train
+
+
+def ridge_regression(w, x, lambda_value):
+    return x.dot(w) + (lambda_value / 2)*w.T.dot(w)
 
 
 def main():
